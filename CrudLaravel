@@ -1,0 +1,407 @@
+1. cmd: composer create-project laravel/laravel sistema
+*Crear la BD en MySQL
+
+2. env -> *cambiar nombre:
+		  DB_DATABASE = sislaravel -> nombre de la BD creada en la BD.
+
+3. Las migraciones se encuentran en:
+sistema>
+database>
+migrations (tablas creadas)
+
+ESENCIAL AL INICIO!!!!!!:
+sistema> php artisan migrate
+• La carpeta migration se va a la BD.
+
+4. Crear MVC de un tipo:
+> php artisan make:model Estudiante -mcr
+
+5. Los modelos se encuentran en la:
+app>Models> Empleado.php , User.php
+
+6. Los controladores:
+app>Http>Controllers>...
+
+7.En el archivo:
+..._create_empleados_table.php
+id->identificador autoincrementable
+timestamp->tiempos en los que se crea el regitro.
+
+■ Agregar los campos necesarios:
+$table->string('Nombre');
+.
+.
+.
+
+8. Para refrescar y actualizar los campos den la BD:
+>php artisan migrate
+
+9.CARPETA VISTAS:
+• En 'resources' -> views.
+• Otra carpeta importante: -> para mostrar las vistas
+routes>web.php
+
+*Las vistas se agregan en la carpeta "View".
+*Las solicitudes que realiza el usuario, se canalizan en web.php -> Rutas.
+
+10. Crear:
+Views> carpeta 'empleado' >index.blade.php (mostrar la lista de empleados).
+							  >create.blade.php (Formulario de creación de empleados).
+
+							  >edit.blade.php (Formulario de edición de empleado).
+
+							  >form.blade.php (Formulario con datos en común de 'create' y 'edit').
+
+
+12. Acceder en el controlador:
+
+	1. En la clase "EmpleadoController.php" en los métodos:
+
+	public function create(){
+		return view('empleado.create');  ->retorna la vista create.
+	}
+
+	2. En las rutas,
+	 • Agregar la referencia:
+
+		use App\Http\Controllers\EmpleadoController;
+
+	 • Acceder al método específico en la ruta:
+	 PARA HACER LA PRUEBA:
+	 	Route::get('/estudiante', function () { return view('estudiante.index');});
+
+	 	Route::get('/materia', function () {
+    	return view('materia.index');
+		});
+
+	 • Comando para ver rutas activas:
+	 > php artisan route:list
+
+	 • Acceder a todas las rutas de todos los métodos:
+
+	 Route::resource('estudiante',EstudianteController::class);
+
+
+13. View: create.blade.php
+-Colocar html
+<form action="{{url('/empleado')}}" method="post">
+	@csrf
+	<div>
+		<label for="Nombre"> Nombre </label>
+		<input type="text" name="Nombre" id="Nombre">
+	</div>
+				.
+				.
+				.
+
+
+14. Completar function store():
+
+	$datosEmpleado = request() -> all();
+	return response()->json($datosEmpleado); -> Retorna archivo json
+
+
+15. Aislar: nombre, apellidoP ....
+En function store(Request $request){
+	$datosEmpleado = request()->except('_token');
+	...
+} -> Para pasar todo menos el token.
+
++Botón: 
+<input type="submit" value="Guardar datos">
+
+
+16. Insertar en la BD:
+
+$datosEmpleado = request()->except('_token');
+Empleado::insert($datosEmpleado);
+return response()->json($datosEmpleado);
+
+
+17. CONSULTAR DATOS:
+public function index(){
+	$datos['empleados'] = Empleado::paginate(5);
+	return view('empleado.index',$datos);
+} 
+
+En index.blade.php :
+-> b-tab header 
+*thead -> cabeceras
+
+<tbody>
+	@foreach($empleados as $empleado)
+	<tr>
+		<td> {{$empleado->id}} </td>
+		<td> {{$empleado->Nombre}} </td>
+			.
+			.
+			.
+		<td> Editar | Borrar </td>
+	@endforeach
+<tbody>
+
+
+18. BORRAR REGISTRO
+-> Controller:
+
+public function destroy($id){
+	Empleado::destroy($id);
+	return redirect('empleado');
+}
+
+->Vista, Index en la parte de 'Borrar':
+
+ <form action="{{url('/estudiante/'.$estudiante->id)}}" method="post">
+                @csrf
+                {{method_field('DELETE')}}
+                <input type="submit" onclick="return confirm('Quieres borrar?')" value="Borrar">
+ </form>
+
+
+19. FORMULARIO - EDIT
+• Copiar en "form.blade.php" del CREATE:
+
+ <label for="Nombre"> Nombre </label>
+ .
+ .
+ .
+ <input type="sbmit">
+
+ • Incluir el form en las vistas 'create' y 'edit':
+ <form>
+ 	@include('empleado.form');   ->Dentro del form
+ </form>
+
+ • En 'edit':
+ Al inicio:
+ @include('empleado.form');
+
+ • Luego en Index:
+ <td>  -> En la parte de 'Editar'
+ <a href={{url('/materia/'.$materia->id.'/edit')}}> Editar </a> 
+.
+.
+.
+
+•En el controlador:
+ public function edit($id)
+    {
+        //
+        $estudiante = Estudiante::findOrFail($id);
+        return view('estudiante.edit', compact('estudiante'));
+    }
+
+• En form.blade ->Pasarle valores:
+
+	<label for="Nombre"> Nombre </label>
+    <input type="text" name="Nombre" value="{{$estudiante->Nombre}}" id="Nombre">
+    .
+    .
+    .
+    A todos los valores.
+
+
+21. GUARDAR DATOS DE EDICION:
+• En edit.blade.php:
+ <form action="{{url('/estudiante/'.$estudiante->id)}}"  method="post">
+        @csrf
+        {{method_field('PATCH')}}
+        @include('estudiante.form');
+ </form>
+
+ •Controlador:
+ public function update(Request $request, $id)
+    {
+        
+        $datosEstudiante = request()->except(['_token','_method']);
+        Estudiante::where('id','=',$id)->update($datosEstudiante);
+        $estudiante = Estudiante::findOrFail($id);
+        return view('estudiante.edit',compact('estudiante'));
+
+    }
+
+
+22. AJUSTANDO FORMULARIOS
+• En form.blade.php :
+value="{{isset($estudiante->Nombre)?$estudiante->Nombre:''}}" 
+.
+.
+.
+-> Para todos
+
+
+23. CREANDO ENLACES
+• index.blade.php :
+Al inicio
+<a href="{{url('estudiante/create')}}">Registrar Nuevo Estudiante </a>
+
+• form.blade.php :
+Al final
+<a href="{{url('estudiante/')}}"> Regresar </a>
+
+
+24. MENSAJES DE TEXTO
+• index.blade.php :
+
+@if(Session::has('mensaje'))
+    {{Session::get('mensaje')}}
+@endif
+
+•En controlador :
+
+public function store(Request $request)
+{
+        .
+        .
+        .
+        //return response()->json($datosEstudiante); -> en vez del json
+
+        return redirect('estudiante')->with('mensaje','Estudiante agregado con exito.');
+}
+
+
+25. MENSAJE ENTRE VISTAS
+
+• edit.blade.php
+-> despues de ('PATCH')
+ @include('estudiante.form',['modo'=>'Editar']);
+</form>
+
+•create
+	@csrf
+    @include('estudiante.form',['modo'=>'Crear']);
+    </form>
+
+•form
+Al inicio:
+	<h1> {{$modo}} Estudiante </h1>
+
+En el botón:
+	<input type="submit" value="{{$modo}} datos">
+
+
+26. BOOTSTRAP Y LOGIN CON LARAVEL
+CMD: sistema> composer require laravel/ui
+	 sistema> php artisan ui bootstrap --auth
+	 sistema> npm install
+	 sistema> npm install && npm run dev
+
+
+
+RUTAS:
+
+Route::get('/', function () {
+    return view('auth.login');
+});
+
+Route::resource('estudiante',EstudianteController::class);
+Auth::routes();
+
+Route::get('/home', [EmpleadoController::class, 'index'])->name('home');
+
+Route::get('/', [EmpleadoController::class, 'index'])->name('home');
+
+
+27. USANDO TEMPLATE
+• index
+
+@extends('layouts.app')
+@section('content')
+<div class="container">
+.
+.
+.
+</table>
+</div>
+@endsection
+
+
+28. SEGURIDAD
+Route::resource('estudiante',EstudianteController::class)->middleware('auth');
+
+
+29. ESTILOS
+•Index
+	<a href="{{url('estudiante/create')}}" class="btn btn-success">Registrar Nuevo Estudiante </a>
+
+	*En el href de 'Editar':
+	 <a href="{{url('/estudiante/'.$estudiante->id.'/edit')}}"  class="btn btn-warning"> Editar </a>
+
+	*En el form que es parte de 'borrar':
+	 <form action="{{url('/estudiante/'.$estudiante->id)}}" class="d-inline" method="post">
+	
+	*En el input de Borrar:
+	 <input type="submit" class="btn btn-danger" onclick="return confirm('Quieres borrar?')" value="Borrar">
+
+•Form
+<div class="form-group">
+    <label for="CI"> CI </label>
+    <input type="text" class="form-control" name="CI" value="{{isset($estudiante->CI)?$estudiante->CI:''}}" id="CI">
+</div>
+--> En todos pero no en los botones
+
+Los botones:
+
+<input type="submit" class="btn btn-success" value="{{$modo}} datos">
+<a href="{{url('estudiante/')}}" class="btn btn-primary"> Regresar </a>
+
+
+30. AGREGAR VALIDACION
+• EmpleadoController
+public function store(Request $request)
+    {
+        //
+        $campos=[
+            'CI'=>'required|string|max:100',
+            'Nombre'=>'required|string|max:100',
+            'ApellidoPaterno'=>'required|string|max:100',
+            'ApellidoMaterno'=>'required|string|max:100',
+            'Nacionalidad'=>'required|string|max:100',
+            'FechaNac'=>'required|date',
+            'Carrera'=>'required|string|max:100',
+            'Semestre'=>'required|string|max:100'
+        ];
+
+        $mensaje=[
+            'required' => ':attribute es requerido'
+        ];
+
+        $this->validate($request,$campos,$mensaje);
+
+        .
+        .
+        .
+}
+
+-> copiar tambien en UPDATE
+
+•En el "form" (al inicio):
+
+<h1> {{$modo}} Estudiante </h1>
+
+@if(count($errors)>0)
+<div class="alert alert-danger" role="alert">
+    <ul>
+        @foreach($errors->all() as $error)
+        <li> {{$error}}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+.
+.
+.
+
+30. MENU
+layout>> app.blade.php
+
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <!-- Left Side Of Navbar -->
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('estudiante.index') }}">{{ __('Estudiantes') }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('materia.index') }}">{{ __('Materias') }}</a>
+                        </li>
+                    </ul>
